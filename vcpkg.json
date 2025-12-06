@@ -1,0 +1,22 @@
+{
+  "name": "bolt",
+  "version": "0.1.0",
+  "description": "Real-Time GPU-Accelerated Constraint Satisfaction Engine",
+  "homepage": "https://github.com/yourusername/bolt",
+  "license": "Apache-2.0",
+  "dependencies": [
+    {
+      "name": "spdlog",
+      "version>=": "1.12.0"
+    },
+    {
+      "name": "nlohmann-json",
+      "version>=": "3.11.2"
+    },
+    {
+      "name": "gtest",
+      "version>=": "1.14.0"
+    }
+  ],
+  "builtin-baseline": "9edb1b8e590cc086563301d735cae4b6e732d2d2"
+}

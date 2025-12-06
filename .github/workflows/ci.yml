@@ -1,0 +1,200 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-linux:
+    name: Build on Linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [g++-11, clang-14]
+        build_type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          ninja-build \
+          libspdlog-dev \
+          nlohmann-json3-dev \
+          libgtest-dev \
+          clang-14 \
+          g++-11
+
+    - name: Configure CMake
+      env:
+        CXX: ${{ matrix.compiler }}
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DBUILD_CUDA=OFF \
+          -DBUILD_TESTS=ON \
+          -DBUILD_EXAMPLES=ON \
+          -DENABLE_WARNINGS=ON
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }}
+
+    - name: Run Tests
+      working-directory: build
+      run: ctest -C ${{ matrix.build_type }} --output-on-failure --verbose
+
+  build-macos:
+    name: Build on macOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: |
+        brew install cmake ninja spdlog nlohmann-json googletest
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_PREFIX_PATH=/opt/homebrew \
+          -DBUILD_CUDA=OFF \
+          -DBUILD_TESTS=ON \
+          -DBUILD_EXAMPLES=ON \
+          -DENABLE_WARNINGS=ON
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }}
+
+    - name: Run Tests
+      working-directory: build
+      run: ctest -C ${{ matrix.build_type }} --output-on-failure --verbose
+
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: '9edb1b8e590cc086563301d735cae4b6e732d2d2'
+
+    - name: Configure CMake
+      run: |
+        cmake -B build `
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
+          -DBUILD_CUDA=OFF `
+          -DBUILD_TESTS=ON `
+          -DBUILD_EXAMPLES=ON `
+          -DENABLE_WARNINGS=ON
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }}
+
+    - name: Run Tests
+      working-directory: build
+      run: ctest -C ${{ matrix.build_type }} --output-on-failure --verbose
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          ninja-build \
+          clang-format-14 \
+          clang-tidy-14 \
+          libspdlog-dev \
+          nlohmann-json3-dev \
+          libgtest-dev
+
+    - name: Check Formatting
+      run: |
+        find include src tests -name '*.hpp' -o -name '*.cpp' | \
+        xargs clang-format-14 --dry-run --Werror
+
+    - name: Configure for Static Analysis
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DBUILD_CUDA=OFF \
+          -DENABLE_STATIC_ANALYSIS=ON \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+    - name: Run Clang-Tidy
+      continue-on-error: true
+      run: |
+        if [ -f build/compile_commands.json ]; then
+          find src -name '*.cpp' | \
+          xargs -I {} clang-tidy-14 -p build {}
+        else
+          echo "No compile_commands.json found, skipping clang-tidy"
+        fi
+
+  sanitizers:
+    name: Sanitizers
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sanitizer: [address, undefined, thread]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          ninja-build \
+          libspdlog-dev \
+          nlohmann-json3-dev \
+          libgtest-dev \
+          g++-11
+
+    - name: Configure with Sanitizers
+      env:
+        CXX: g++-11
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DBUILD_CUDA=OFF \
+          -DENABLE_SANITIZERS=ON \
+          -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run Tests with Sanitizer
+      working-directory: build
+      run: ctest --output-on-failure --verbose

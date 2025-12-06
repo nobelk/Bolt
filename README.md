@@ -1,5 +1,13 @@
 # Bolt ⚡
 
+[![CI](https://github.com/yourusername/bolt/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/bolt/actions/workflows/ci.yml)
+[![CUDA Build](https://github.com/yourusername/bolt/actions/workflows/cuda.yml/badge.svg)](https://github.com/yourusername/bolt/actions/workflows/cuda.yml)
+[![Code Coverage](https://codecov.io/gh/yourusername/bolt/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/bolt)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
+[![CUDA](https://img.shields.io/badge/CUDA-12.x-76B900.svg?logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
+[![CMake](https://img.shields.io/badge/CMake-3.25+-064F8C.svg?logo=cmake)](https://cmake.org/)
+
 **Real-Time Constraint Satisfaction for Agent Actions**
 
 A high-performance, GPU-accelerated constraint satisfaction engine designed to validate and guide AI agent actions in real-time, preventing invalid action generation before execution.
@@ -23,14 +31,14 @@ Current AI agents frequently generate invalid actions due to:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Agent / LLM Layer                        │
-│  (Generates proposed actions, plans, resource allocations)   │
+│                     Agent / LLM Layer                       │
+│  (Generates proposed actions, plans, resource allocations)  │
 └────────────────────────┬────────────────────────────────────┘
                          │ Action Proposal
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   Bolt API Gateway                           │
-│              (REST/gRPC/Python Bindings)                     │
+│                   Bolt API Gateway                          │
+│              (REST/gRPC/Python Bindigs)                     │
 └────────────────────────┬────────────────────────────────────┘
                          │
          ┌───────────────┴───────────────┐
@@ -43,23 +51,23 @@ Current AI agents frequently generate invalid actions due to:
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Core CSP Engine (C++)                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Constraint  │  │   Temporal   │  │   Resource   │      │
-│  │ Propagation  │  │  Constraint  │  │  Constraint  │      │
-│  │    (AC-3)    │  │   Network    │  │   Manager    │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│              Core CSP Engine (C++)                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  Constraint  │  │   Temporal   │  │   Resource   │       │
+│  │ Propagation  │  │  Constraint  │  │  Constraint  │       │
+│  │    (AC-3)    │  │   Network    │  │   Manager    │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
 └────────┬────────────────────────────────────────────────────┘
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│          CUDA Acceleration Layer                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Parallel   │  │   Parallel   │  │   Parallel   │      │
-│  │  Constraint  │  │    Domain    │  │    Search    │      │
-│  │   Checking   │  │  Reduction   │  │   (Beam)     │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                               │
+│          CUDA Acceleration Layer                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │   Parallel   │  │   Parallel   │  │   Parallel   │       │
+│  │  Constraint  │  │    Domain    │  │    Search    │       │
+│  │   Checking   │  │  Reduction   │  │   (Beam)     │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                                                             │
 │  ┌────────────────────────────────────────────────────┐     │
 │  │  GPU Memory Manager (Unified Memory/Zero-Copy)     │     │
 │  └────────────────────────────────────────────────────┘     │
@@ -67,11 +75,11 @@ Current AI agents frequently generate invalid actions due to:
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Response Generator                              │
-│   • Valid/Invalid status                                     │
-│   • Constraint violation details                             │
-│   • Suggested fixes (repair strategies)                      │
-│   • Alternative valid actions                                │
+│              Response Generator                             │
+│   • Valid/Invalid status                                    │
+│   • Constraint violation details                            │
+│   • Suggested fixes (repair strategies)                     │
+│   • Alternative valid actions                               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -540,10 +548,33 @@ bolt/
 - **Profiling:** NVIDIA Nsight Systems, Nsight Compute
 
 ### Infrastructure
-- **CI/CD:** GitHub Actions
+- **CI/CD:** GitHub Actions (multi-platform builds, sanitizers, coverage)
 - **Container:** Docker with NVIDIA Container Toolkit
 - **Monitoring:** Prometheus + Grafana
 - **Documentation:** Doxygen, Sphinx
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration:
+
+- **CI Workflow** (`ci.yml`): Multi-platform builds (Linux, macOS, Windows) with multiple compilers
+  - GCC 11+ and Clang 14+ on Linux
+  - Apple Clang on macOS
+  - MSVC on Windows
+  - Both Debug and Release configurations
+  - Code formatting checks (clang-format)
+  - Static analysis (clang-tidy)
+  - Sanitizers (AddressSanitizer, UndefinedBehaviorSanitizer, ThreadSanitizer)
+
+- **CUDA Workflow** (`cuda.yml`): GPU-accelerated builds
+  - CUDA 12.3+ support
+  - Multiple GPU architectures (Compute Capability 7.0+)
+  - CUDA code format validation
+
+- **Coverage Workflow** (`coverage.yml`): Code coverage reporting
+  - lcov-based coverage generation
+  - Codecov integration
+  - Automated coverage reports on PRs
 
 ---
 
