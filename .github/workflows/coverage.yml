@@ -16,8 +16,9 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        make deps-install
-        sudo apt-get install -y lcov
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build lcov g++-11 \
+          libspdlog-dev nlohmann-json3-dev libgtest-dev
 
     - name: Generate Coverage
       env:

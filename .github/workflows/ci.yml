@@ -20,7 +20,11 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install Dependencies
-      run: make deps-install
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build \
+          libspdlog-dev nlohmann-json3-dev libgtest-dev \
+          g++-11 clang-14
 
     - name: Build and Test
       env:
@@ -77,8 +81,10 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        make deps-install
-        sudo apt-get install -y clang-format-14 clang-tidy-14
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build \
+          libspdlog-dev nlohmann-json3-dev libgtest-dev \
+          clang-format-14 clang-tidy-14
 
     - name: Check Code Formatting
       run: make format-check
@@ -98,7 +104,11 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install Dependencies
-      run: make deps-install
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build \
+          libspdlog-dev nlohmann-json3-dev libgtest-dev \
+          g++-11
 
     - name: Build and Test with Sanitizer
       env:
