@@ -578,24 +578,86 @@ The project uses GitHub Actions for continuous integration:
 
 ---
 
-## 🚀 Getting Started (Future)
+## 🚀 Getting Started
 
 ### Prerequisites
 ```bash
-# CUDA Toolkit 12.x
-# CMake 3.25+
-# GCC 11+ or Clang 14+
-# Python 3.9+ (for bindings)
+# Required:
+# - CMake 3.25+
+# - C++20 compatible compiler (GCC 11+, Clang 14+, or MSVC 2022+)
+# - spdlog >= 1.12.0
+# - nlohmann-json >= 3.11.2
+# - googletest >= 1.14.0
+
+# Optional:
+# - CUDA Toolkit 12.x (for GPU acceleration)
+# - Python 3.9+ (for bindings, future)
 ```
 
-### Build (Planned)
+### Install Dependencies
+
+**macOS (Homebrew):**
 ```bash
-git clone https://github.com/yourusername/bolt.git
-cd bolt
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_CUDA=ON
-make -j$(nproc)
+brew install cmake ninja spdlog nlohmann-json googletest
+# or use: make deps-install
 ```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get install cmake ninja-build libspdlog-dev nlohmann-json3-dev libgtest-dev
+```
+
+### Build & Test
+
+**Quick Start with Makefile:**
+```bash
+git clone https://github.com/nobelk/bolt.git
+cd bolt
+
+# Show all available commands
+make help
+
+# Configure, build, and test (all in one)
+make all
+
+# Or step by step
+make configure   # Configure CMake
+make build       # Build the project
+make test        # Run tests
+
+# Fast rebuild (after changes)
+make fast
+```
+
+**Using CMake Directly:**
+```bash
+# Configure
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/homebrew -DBUILD_CUDA=OFF
+
+# Build
+cmake --build build -j$(nproc)
+
+# Test
+cd build && ctest --output-on-failure
+```
+
+### Common Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make all` | Configure, build, and test |
+| `make build` | Build the project |
+| `make test` | Run all tests |
+| `make clean` | Clean build artifacts |
+| `make debug` | Build in Debug mode |
+| `make release` | Build in Release mode |
+| `make cuda` | Build with CUDA support |
+| `make format` | Format code with clang-format |
+| `make coverage` | Generate code coverage report |
+| `make info` | Show build configuration |
+| `make status` | Show git and build status |
+
+Run `make help` for the complete list of targets.
 
 ### Quick Start (Planned)
 ```cpp

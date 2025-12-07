@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build on Linux (${{ matrix.compiler }}, ${{ matrix.build_type }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [g++-11, clang-14]
+        build_type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: make deps-install
+
+    - name: Build and Test
+      env:
+        CXX: ${{ matrix.compiler }}
+        BUILD_TYPE: ${{ matrix.build_type }}
+      run: make all
+
+  build-macos:
+    name: Build on macOS (${{ matrix.build_type }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: make deps-install
+
+    - name: Build and Test
+      env:
+        BUILD_TYPE: ${{ matrix.build_type }}
+      run: make all
+
+  build-windows:
+    name: Build on Windows (${{ matrix.build_type }})
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: '9edb1b8e590cc086563301d735cae4b6e732d2d2'
+
+    - name: Configure, Build, and Test
+      shell: cmd
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE=%GITHUB_WORKSPACE%/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_CUDA=OFF
+        cmake --build build --config ${{ matrix.build_type }}
+        cd build && ctest -C ${{ matrix.build_type }} --output-on-failure
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: |
+        make deps-install
+        sudo apt-get install -y clang-format-14 clang-tidy-14
+
+    - name: Check Code Formatting
+      run: make format-check
+
+    - name: Run Static Analysis
+      continue-on-error: true
+      run: make tidy
+
+  sanitizers:
+    name: Sanitizers (${{ matrix.sanitizer }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sanitizer: [address, undefined, thread]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: make deps-install
+
+    - name: Build and Test with Sanitizer
+      env:
+        CXX: g++-11
+        BUILD_TYPE: Debug
+        ENABLE_SANITIZERS: ON
+      run: |
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_CUDA=OFF \
+          -DENABLE_SANITIZERS=ON \
+          -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer"
+        cmake --build build
+        cd build && ctest --output-on-failure
